@@ -30,4 +30,5 @@ public class Patient {
     )
     private String oms;
     private String sex;
+    private Integer height;
 }

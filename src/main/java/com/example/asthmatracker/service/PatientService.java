@@ -35,6 +35,7 @@ public class PatientService {
                 .set(PATIENTS.PHONE_NUMBER, patient.getPhone_number())
                 .set(PATIENTS.OMS, patient.getOms())
                 .set(PATIENTS.SEX, patient.getSex())
+                .set(PATIENTS.HEIGHT, patient.getHeight())
                 .returning(PATIENTS.ID)
                 .fetchOne();
 
@@ -76,6 +77,7 @@ public class PatientService {
                 .set(PATIENTS.SEX, patient.getSex())
                 .set(PATIENTS.EMAIL, patient.getEmail())
                 .set(PATIENTS.PHONE_NUMBER, patient.getPhone_number())
+                .set(PATIENTS.HEIGHT, patient.getHeight())
                 .where(PATIENTS.ID.eq(id))
                 .returning()
                 .fetchOne();
