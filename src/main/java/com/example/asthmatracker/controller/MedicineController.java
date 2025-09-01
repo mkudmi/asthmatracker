@@ -2,9 +2,11 @@ package com.example.asthmatracker.controller;
 
 import com.example.asthmatracker.models.Medicine;
 import com.example.asthmatracker.models.TakingMedication;
+import com.example.asthmatracker.models.TakingMedicationView;
 import com.example.asthmatracker.service.MedicineService;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -49,5 +51,17 @@ public class MedicineController {
     @PostMapping("taking-medication")
     public TakingMedication postTakingMedication(@RequestBody TakingMedication takingMedication) {
         return medicineService.postTakingMedication(takingMedication);
+    }
+
+    /**
+     * Получить список принятых лекарств пациентом
+     */
+    @GetMapping("taking-medicine")
+    public List<TakingMedicationView> getTakingMedicineByPatient(
+            @RequestParam(required = false) String oms,
+            @RequestParam(required = false) Integer patient_id,
+            @RequestParam(required = false) LocalDate start_date,
+            @RequestParam(required = false) LocalDate end_date) {
+        return medicineService.getTakingMedicineViewByPatient(oms, patient_id, start_date, end_date);
     }
 }

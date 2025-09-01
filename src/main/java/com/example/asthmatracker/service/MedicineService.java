@@ -2,10 +2,12 @@ package com.example.asthmatracker.service;
 
 import com.example.asthmatracker.models.Medicine;
 import com.example.asthmatracker.models.TakingMedication;
+import com.example.asthmatracker.models.TakingMedicationView;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.example.jooq.generated.Tables.*;
@@ -59,4 +61,21 @@ public class MedicineService {
         }
         return takingMedication;
     }
+
+    public List<TakingMedicationView> getTakingMedicineViewByPatient(
+            String oms, Integer patientId, LocalDate startDate, LocalDate endDate) {
+        return dsl.select(TAKING_MEDICATION.PATIENT_ID, PATIENTS.OMS, TAKING_MEDICATION.MEDICINE_ID,
+                        MEDICINE.NAME, MEDICINE.MKG, TAKING_MEDICATION.DATE_TIME)
+                .from(TAKING_MEDICATION)
+                .join(PATIENTS).on(TAKING_MEDICATION.PATIENT_ID.eq(PATIENTS.ID))
+                .join(MEDICINE).on(TAKING_MEDICATION.MEDICINE_ID.eq(MEDICINE.ID))
+                .where(
+                        PATIENTS.OMS.eq(oms)
+                                .or(PATIENTS.ID.eq(patientId))
+                                .and(TAKING_MEDICATION.DATE_TIME.between(startDate.atStartOfDay(),
+                                        endDate.plusDays(1).atStartOfDay().minusSeconds(1))))
+                .orderBy(TAKING_MEDICATION.DATE_TIME.desc())
+                .fetchInto(TakingMedicationView.class);
+    }
+
 }
