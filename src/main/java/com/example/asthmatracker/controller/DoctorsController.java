@@ -2,7 +2,6 @@ package com.example.asthmatracker.controller;
 
 import com.example.asthmatracker.models.Doctors;
 import com.example.asthmatracker.models.DoctorsRegistration;
-import com.example.asthmatracker.models.PatientRegistration;
 import com.example.asthmatracker.service.DoctorsService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -46,7 +45,7 @@ public class DoctorsController {
 
     /**
      * Присвоить доктору пароль
-     * */
+     */
     @PostMapping("/register")
     public DoctorsRegistration createDoctorsPassword(@RequestBody DoctorsRegistration doctorsRegistration) {
         return doctorsService.createDoctorPassword(doctorsRegistration);

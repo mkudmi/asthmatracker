@@ -1,6 +1,7 @@
 package com.example.asthmatracker.controller;
 
 import com.example.asthmatracker.models.Patient;
+import com.example.asthmatracker.models.PatientLoginRequest;
 import com.example.asthmatracker.models.PatientRegistration;
 import com.example.asthmatracker.service.PatientService;
 import jakarta.validation.Valid;
@@ -65,8 +66,8 @@ public class PatientController {
     /**
      * Проверить, что пароль пользователя корректный
      * */
-    @GetMapping("/validate")
-    public boolean validateLogin(@RequestParam String oms, @RequestParam String password) {
-        return patientService.isLoginValid(oms, password);
+    @PostMapping("/validate")
+    public boolean validateLogin(@RequestBody PatientLoginRequest request) {
+        return patientService.isLoginValid(request.getOms(), request.getPassword());
     }
 }
