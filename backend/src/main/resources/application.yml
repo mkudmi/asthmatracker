@@ -1,0 +1,14 @@
+server:
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://91.218.228.129:5432/asthmatracker
+    username: asthmauser
+    password: asthmapassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

@@ -1,0 +1,23 @@
+version: '3.3'
+
+services:
+  spring-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://91.218.228.129:5432/asthmatracker
+      - SPRING_DATASOURCE_USERNAME=asthmauser
+      - SPRING_DATASOURCE_PASSWORD=asthmapassword
+    networks:
+      - asthma-network
+    restart: always
+
+networks:
+  asthma-network:
+    external:
+      name: asthma-network
+
