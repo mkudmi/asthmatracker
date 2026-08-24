@@ -1,0 +1,14 @@
+@font-face {
+  font-family: 'Days One';
+  src: url('./assets/fonts/Entropia-Light.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Entropia Light', sans-serif;
+}
