@@ -1,53 +1,54 @@
 package com.example.asthmatracker.controller;
 
+import com.example.asthmatracker.models.DoctorLoginRequest;
 import com.example.asthmatracker.models.Doctors;
 import com.example.asthmatracker.models.DoctorsRegistration;
+import com.example.asthmatracker.models.RegistrationResponse;
 import com.example.asthmatracker.service.DoctorsService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
 @RequestMapping("/api/doctors")
 public class DoctorsController {
 
-    private final DoctorsService doctorsService;
+    private final DoctorsService service;
 
-    public DoctorsController(DoctorsService doctorsService) {
-        this.doctorsService = doctorsService;
+    public DoctorsController(DoctorsService service) {
+        this.service = service;
     }
 
-    /**
-     * Создать доктора
-     */
     @PostMapping
-    public Doctors createDoctor(@Valid @RequestBody Doctors doctors) {
-        return doctorsService.createDoctor(doctors);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Doctors create(@Valid @RequestBody Doctors doctor) {
+        return service.create(doctor);
     }
 
-    /**
-     * Получить информацию о докторе
-     */
     @GetMapping("/doctor")
-    public Doctors getDoctorByPersonnelNumber(
-            @RequestParam String personnel_number) {
-        return doctorsService.getDoctorByPersonnelNumber(personnel_number);
+    public Doctors getByPersonnelNumber(
+            @RequestParam(name = "personnel_number") @NotBlank String personnelNumber
+    ) {
+        return service.getByPersonnelNumber(personnelNumber);
     }
 
-    /**
-     * Проверить, что пароль доктора корректный
-     */
-    @GetMapping("/validate")
-    public boolean validateLogin(
-            @RequestParam String personnel_number,
-            @RequestParam String password) {
-        return doctorsService.isLoginValid(personnel_number, password);
+    @PostMapping("/validate")
+    public boolean validateLogin(@Valid @RequestBody DoctorLoginRequest request) {
+        return service.isLoginValid(request.personnelNumber(), request.password());
     }
 
-    /**
-     * Присвоить доктору пароль
-     */
     @PostMapping("/register")
-    public DoctorsRegistration createDoctorsPassword(@RequestBody DoctorsRegistration doctorsRegistration) {
-        return doctorsService.createDoctorPassword(doctorsRegistration);
+    @ResponseStatus(HttpStatus.CREATED)
+    public RegistrationResponse register(@Valid @RequestBody DoctorsRegistration request) {
+        return service.register(request);
     }
 }

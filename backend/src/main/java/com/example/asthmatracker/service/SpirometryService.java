@@ -8,7 +8,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.jooq.generated.Tables.SPIROMETRY;
+import static com.example.asthmatracker.persistence.DatabaseTables.SPIROMETRY;
+import static com.example.asthmatracker.persistence.DatabaseTables.SPIROMETRY_DATE_TIME;
+import static com.example.asthmatracker.persistence.DatabaseTables.SPIROMETRY_ID;
+import static com.example.asthmatracker.persistence.DatabaseTables.SPIROMETRY_PATIENT_ID;
+import static com.example.asthmatracker.persistence.DatabaseTables.SPIROMETRY_RESULT;
 
 @Service
 public class SpirometryService {
@@ -19,28 +23,32 @@ public class SpirometryService {
         this.dsl = dsl;
     }
 
-    public Spirometry postResultOfSpirometry(Spirometry spirometry) {
-        Record record = dsl.insertInto(SPIROMETRY)
-                .set(SPIROMETRY.PATIENT_ID, spirometry.getPatient_id())
-                .set(SPIROMETRY.RESULT, spirometry.getResult())
-                .set(SPIROMETRY.DATE_TIME, spirometry.getDate_time())
-                .returning(SPIROMETRY.ID)
-                .fetchOne();
+    public Spirometry create(Spirometry spirometry) {
+        Integer id = dsl.insertInto(SPIROMETRY)
+                .set(SPIROMETRY_PATIENT_ID, spirometry.patientId())
+                .set(SPIROMETRY_RESULT, spirometry.result())
+                .set(SPIROMETRY_DATE_TIME, spirometry.dateTime())
+                .returning(SPIROMETRY_ID)
+                .fetchOne(SPIROMETRY_ID);
 
-        if (record != null) {
-            spirometry.setId(record.get(SPIROMETRY.ID));
-        }
-
-        return spirometry;
+        return new Spirometry(id, spirometry.patientId(), spirometry.result(), spirometry.dateTime());
     }
 
-    public List<Spirometry> getSpirometryByFilter(Integer patientId, LocalDate startDate, LocalDate endDate) {
-        return dsl.selectFrom(SPIROMETRY)
-                .where(SPIROMETRY.PATIENT_ID.eq(patientId))
-                .and(SPIROMETRY.DATE_TIME.between(
-                        startDate.atStartOfDay(),
-                        endDate.plusDays(1).atStartOfDay().minusSeconds(1)
-                ))
-                .fetchInto(Spirometry.class);
+    public List<Spirometry> find(Integer patientId, LocalDate startDate, LocalDate endDate) {
+        return dsl.select(SPIROMETRY_ID, SPIROMETRY_PATIENT_ID, SPIROMETRY_RESULT, SPIROMETRY_DATE_TIME)
+                .from(SPIROMETRY)
+                .where(SPIROMETRY_PATIENT_ID.eq(patientId))
+                .and(DateRange.condition(SPIROMETRY_DATE_TIME, startDate, endDate))
+                .orderBy(SPIROMETRY_DATE_TIME.asc())
+                .fetch(this::map);
+    }
+
+    private Spirometry map(Record record) {
+        return new Spirometry(
+                record.get(SPIROMETRY_ID),
+                record.get(SPIROMETRY_PATIENT_ID),
+                record.get(SPIROMETRY_RESULT),
+                record.get(SPIROMETRY_DATE_TIME)
+        );
     }
 }

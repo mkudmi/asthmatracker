@@ -21,9 +21,11 @@ function DoctorAuthPage({ onSuccessDoctorLogin }) {
     e.preventDefault();
     setError('');
     try {
-      const res = await fetch(
-        `${API_URL}/doctors/validate?personnel_number=${personnelNumber}&password=${password}`
-      );
+      const res = await fetch(`${API_URL}/doctors/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personnel_number: personnelNumber, password }),
+      });
       const isValid = await res.json();
       if (res.ok && isValid === true) {
         onSuccessDoctorLogin({ personnelNumber });

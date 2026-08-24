@@ -2,121 +2,135 @@ package com.example.asthmatracker.service;
 
 import com.example.asthmatracker.models.Patient;
 import com.example.asthmatracker.models.PatientRegistration;
+import com.example.asthmatracker.models.RegistrationResponse;
+import com.example.asthmatracker.web.NotFoundException;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static com.example.jooq.generated.Tables.PATIENTS;
-import static com.example.jooq.generated.Tables.PATIENT_LOGIN;
+import static com.example.asthmatracker.persistence.DatabaseTables.*;
 
 @Service
 public class PatientService {
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
     private final DSLContext dsl;
+    private final PasswordEncoder passwordEncoder;
 
-    public PatientService(DSLContext dsl) {
+    public PatientService(DSLContext dsl, PasswordEncoder passwordEncoder) {
         this.dsl = dsl;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public Patient createPatient(Patient patient) {
-        Record record = dsl.insertInto(PATIENTS)
-                .set(PATIENTS.NAME, patient.getName())
-                .set(PATIENTS.SURNAME, patient.getSurname())
-                .set(PATIENTS.PATRONYMIC, patient.getPatronymic())
-                .set(PATIENTS.BIRTHDAY, patient.getBirthday())
-                .set(PATIENTS.EMAIL, patient.getEmail())
-                .set(PATIENTS.PHONE_NUMBER, patient.getPhone_number())
-                .set(PATIENTS.OMS, patient.getOms())
-                .set(PATIENTS.SEX, patient.getSex())
-                .set(PATIENTS.HEIGHT, patient.getHeight())
-                .returning(PATIENTS.ID)
-                .fetchOne();
-
-        if (record != null) {
-            patient.setId(record.get(PATIENTS.ID));
-        }
-
-        return patient;
+    public Patient create(Patient patient) {
+        Integer id = dsl.insertInto(PATIENTS)
+                .set(PATIENT_NAME, patient.name())
+                .set(PATIENT_SURNAME, patient.surname())
+                .set(PATIENT_PATRONYMIC, patient.patronymic())
+                .set(PATIENT_BIRTHDAY, patient.birthday())
+                .set(PATIENT_EMAIL, patient.email())
+                .set(PATIENT_PHONE, patient.phoneNumber())
+                .set(PATIENT_OMS, patient.oms())
+                .set(PATIENT_SEX, patient.sex())
+                .set(PATIENT_HEIGHT, patient.height())
+                .returning(PATIENT_ID)
+                .fetchOne(PATIENT_ID);
+        return copyWithId(patient, id);
     }
 
-    public List<Patient> getPatientsByFilter(String fullName, String oms) {
+    public List<Patient> find(String fullName, String oms) {
         Condition condition = DSL.noCondition();
         if (fullName != null && !fullName.isBlank()) {
-            String likePattern = "%" + fullName.toLowerCase() + "%";
+            String pattern = "%" + fullName.trim().toLowerCase() + "%";
             condition = condition.and(
-                    DSL.lower(PATIENTS.NAME).like(likePattern)
-                            .or(DSL.lower(PATIENTS.SURNAME).like(likePattern))
-                            .or(DSL.lower(PATIENTS.PATRONYMIC).like(likePattern))
+                    DSL.lower(PATIENT_NAME).like(pattern)
+                            .or(DSL.lower(PATIENT_SURNAME).like(pattern))
+                            .or(DSL.lower(PATIENT_PATRONYMIC).like(pattern))
             );
         }
-
         if (oms != null && !oms.isBlank()) {
-            condition = condition.and(
-                    PATIENTS.OMS.like("%" + oms + "%")
-            );
+            condition = condition.and(PATIENT_OMS.eq(oms.trim()));
         }
 
-        return dsl.selectFrom(PATIENTS)
+        return dsl.select(patientFields())
+                .from(PATIENTS)
                 .where(condition)
-                .fetchInto(Patient.class);
+                .orderBy(PATIENT_SURNAME, PATIENT_NAME)
+                .fetch(this::map);
     }
 
-    public Patient updatePatient(Patient patient, Integer id) {
+    public Patient update(Integer id, Patient patient) {
         Record record = dsl.update(PATIENTS)
-                .set(PATIENTS.NAME, patient.getName())
-                .set(PATIENTS.SURNAME, patient.getSurname())
-                .set(PATIENTS.PATRONYMIC, patient.getPatronymic())
-                .set(PATIENTS.BIRTHDAY, patient.getBirthday())
-                .set(PATIENTS.SEX, patient.getSex())
-                .set(PATIENTS.EMAIL, patient.getEmail())
-                .set(PATIENTS.PHONE_NUMBER, patient.getPhone_number())
-                .set(PATIENTS.HEIGHT, patient.getHeight())
-                .where(PATIENTS.ID.eq(id))
-                .returning()
+                .set(PATIENT_NAME, patient.name())
+                .set(PATIENT_SURNAME, patient.surname())
+                .set(PATIENT_PATRONYMIC, patient.patronymic())
+                .set(PATIENT_BIRTHDAY, patient.birthday())
+                .set(PATIENT_EMAIL, patient.email())
+                .set(PATIENT_PHONE, patient.phoneNumber())
+                .set(PATIENT_OMS, patient.oms())
+                .set(PATIENT_SEX, patient.sex())
+                .set(PATIENT_HEIGHT, patient.height())
+                .where(PATIENT_ID.eq(id))
+                .returning(patientFields())
                 .fetchOne();
-
-        return record.into(Patient.class);
-    }
-
-    public void deletePatientByOms(String oms) {
-        int rowsDeleted = dsl.deleteFrom(PATIENTS)
-                .where(PATIENTS.OMS.eq(oms))
-                .execute();
-    }
-
-    public PatientRegistration createPatientPassword(PatientRegistration patientRegistration) {
-        String hashedPassword = passwordEncoder.encode(patientRegistration.getPassword());
-
-        Record record = dsl.insertInto(PATIENT_LOGIN)
-                .set(PATIENT_LOGIN.OMS, patientRegistration.getOms())
-                .set(PATIENT_LOGIN.PASSWORD, hashedPassword)
-                .returning(PATIENT_LOGIN.ID)
-                .fetchOne();
-
-        if (record != null) {
-            patientRegistration.setId(record.get(PATIENTS.ID));
+        if (record == null) {
+            throw new NotFoundException("Patient not found: " + id);
         }
+        return map(record);
+    }
 
-        return null;
+    public void deleteByOms(String oms) {
+        int deleted = dsl.deleteFrom(PATIENTS)
+                .where(PATIENT_OMS.eq(oms))
+                .execute();
+        if (deleted == 0) {
+            throw new NotFoundException("Patient not found for OMS: " + oms);
+        }
+    }
+
+    public RegistrationResponse register(PatientRegistration request) {
+        if (!dsl.fetchExists(PATIENTS, PATIENT_OMS.eq(request.oms()))) {
+            throw new NotFoundException("Patient not found for OMS: " + request.oms());
+        }
+        Integer id = dsl.insertInto(PATIENT_LOGIN)
+                .set(PATIENT_LOGIN_OMS, request.oms())
+                .set(PATIENT_LOGIN_PASSWORD, passwordEncoder.encode(request.password()))
+                .returning(PATIENT_LOGIN_ID)
+                .fetchOne(PATIENT_LOGIN_ID);
+        return new RegistrationResponse(id, request.oms());
     }
 
     public boolean isLoginValid(String oms, String password) {
-        Record record = dsl.selectFrom(PATIENT_LOGIN)
-                .where(PATIENT_LOGIN.OMS.eq(oms))
-                .fetchOne();
+        String hash = dsl.select(PATIENT_LOGIN_PASSWORD)
+                .from(PATIENT_LOGIN)
+                .where(PATIENT_LOGIN_OMS.eq(oms))
+                .fetchOne(PATIENT_LOGIN_PASSWORD);
+        return hash != null && passwordEncoder.matches(password, hash);
+    }
 
-        if (record == null) {
-            return false;
-        }
+    private org.jooq.SelectFieldOrAsterisk[] patientFields() {
+        return new org.jooq.SelectFieldOrAsterisk[]{
+                PATIENT_ID, PATIENT_NAME, PATIENT_SURNAME, PATIENT_PATRONYMIC,
+                PATIENT_BIRTHDAY, PATIENT_EMAIL, PATIENT_PHONE, PATIENT_OMS,
+                PATIENT_SEX, PATIENT_HEIGHT
+        };
+    }
 
-        String hashedPassword = record.get(PATIENT_LOGIN.PASSWORD);
-        return passwordEncoder.matches(password, hashedPassword);
+    private Patient map(Record record) {
+        return new Patient(
+                record.get(PATIENT_ID), record.get(PATIENT_NAME), record.get(PATIENT_SURNAME),
+                record.get(PATIENT_PATRONYMIC), record.get(PATIENT_BIRTHDAY), record.get(PATIENT_EMAIL),
+                record.get(PATIENT_PHONE), record.get(PATIENT_OMS), record.get(PATIENT_SEX),
+                record.get(PATIENT_HEIGHT)
+        );
+    }
+
+    private Patient copyWithId(Patient patient, Integer id) {
+        return new Patient(id, patient.name(), patient.surname(), patient.patronymic(), patient.birthday(),
+                patient.email(), patient.phoneNumber(), patient.oms(), patient.sex(), patient.height());
     }
 }

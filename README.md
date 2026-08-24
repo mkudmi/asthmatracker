@@ -5,35 +5,50 @@
 - `backend/` — Spring Boot API из [BackEnd-Asthma_Tracker](https://github.com/AlexDesmos/BackEnd-Asthma_Tracker);
 - `frontend/` — React-приложение из [FrontEnd-Asthma_Tracker](https://github.com/AlexDesmos/FrontEnd-Asthma_Tracker).
 
-## Локальный запуск
+## Локальный запуск через Docker
 
-Требуются Java 21, Node.js/npm и доступная PostgreSQL.
-
-Backend (после настройки PostgreSQL):
+База и backend запускаются одной командой. Flyway сам создаст схему БД:
 
 ```bash
-cd backend
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/asthmatracker \
-SPRING_DATASOURCE_USERNAME=asthmauser \
-SPRING_DATASOURCE_PASSWORD=asthmapassword \
-./mvnw spring-boot:run
+docker compose -f backend/docker-compose.yml up --build
 ```
+
+API будет доступен на <http://localhost:8080>.
 
 Frontend (во втором терминале):
 
 ```bash
 cd frontend
 npm ci
-REACT_APP_API_URL=http://localhost:8080 npm start
+REACT_APP_API_URL=http://localhost:8080/api npm start
 ```
 
 Приложение откроется на <http://localhost:3000>.
 
-> В исходном backend адрес и учётные данные PostgreSQL заданы в `application.yml` и в конфигурации jOOQ в `pom.xml`. Перед локальной сборкой нужно перевести оба места на отдельную локальную БД; переменные в команде выше переопределяют runtime-конфигурацию, но не Maven-плагин jOOQ.
+## Запуск backend без Docker
+
+Требуются Java 21 и PostgreSQL. Параметры передаются только через окружение:
+
+```bash
+cd backend
+DB_URL=jdbc:postgresql://localhost:5432/asthmatracker \
+DB_USERNAME=asthmauser \
+DB_PASSWORD=asthmapassword \
+./mvnw spring-boot:run
+```
+
+## Проверка
+
+```bash
+cd backend && ./mvnw clean test
+cd ../frontend && npm run build
+```
+
+Backend-тесты используют in-memory H2 и не требуют внешней БД.
 
 ## Обновление из исходных репозиториев
 
-Исходные репозитории подключены как `backend-upstream` и `frontend-upstream`. Их история сохранена через Git subtree.
+Исходные репозитории подключены как `backend-upstream` и `frontend-upstream`. Их история сохранена через Git subtree. После pull нужно вручную проверить конфликты с текущей архитектурой.
 
 ```bash
 git subtree pull --prefix=backend backend-upstream master

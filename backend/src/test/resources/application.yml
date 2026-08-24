@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:asthmatracker;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  flyway:
+    enabled: true
+    schemas: tracker
+    default-schema: tracker
+  jooq:
+    sql-dialect: H2
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000

@@ -1,13 +1,12 @@
 package com.example.asthmatracker.models;
 
-import lombok.Builder;
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-@Data
-@Builder
-public class Doctors {
-    private Integer id;
-    private String name;
-    private String surname;
-    private String personnel_number;
+public record Doctors(
+        Integer id,
+        @NotBlank @Size(max = 100) String name,
+        @NotBlank @Size(max = 100) String surname,
+        @NotBlank @Size(max = 50) String personnelNumber
+) {
 }

@@ -1,15 +1,14 @@
 package com.example.asthmatracker.models;
 
-import lombok.Builder;
-import lombok.Data;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDateTime;
 
-@Data
-@Builder
-public class TakingMedication {
-    private Integer id;
-    private Integer patient_id;
-    private Integer medicine_id;
-    private LocalDateTime date_time;
+public record TakingMedication(
+        Integer id,
+        @NotNull @Positive Integer patientId,
+        @NotNull @Positive Integer medicineId,
+        @NotNull LocalDateTime dateTime
+) {
 }

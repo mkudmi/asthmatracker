@@ -1,23 +1,32 @@
-version: '3.3'
-
 services:
-  spring-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: asthmatracker
+      POSTGRES_USER: asthmauser
+      POSTGRES_PASSWORD: asthmapassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - asthma-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asthmauser -d asthmatracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/asthmatracker
+      DB_USERNAME: asthmauser
+      DB_PASSWORD: asthmapassword
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
     ports:
       - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://91.218.228.129:5432/asthmatracker
-      - SPRING_DATASOURCE_USERNAME=asthmauser
-      - SPRING_DATASOURCE_PASSWORD=asthmapassword
-    networks:
-      - asthma-network
-    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
 
-networks:
-  asthma-network:
-    external:
-      name: asthma-network
-
+volumes:
+  asthma-postgres-data:

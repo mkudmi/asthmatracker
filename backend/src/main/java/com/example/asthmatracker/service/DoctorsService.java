@@ -2,88 +2,69 @@ package com.example.asthmatracker.service;
 
 import com.example.asthmatracker.models.Doctors;
 import com.example.asthmatracker.models.DoctorsRegistration;
+import com.example.asthmatracker.models.RegistrationResponse;
+import com.example.asthmatracker.web.NotFoundException;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import static com.example.jooq.generated.Tables.DOCTORS;
-import static com.example.jooq.generated.Tables.DOCTOR_LOGIN;
+import static com.example.asthmatracker.persistence.DatabaseTables.*;
 
 @Service
 public class DoctorsService {
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
     private final DSLContext dsl;
+    private final PasswordEncoder passwordEncoder;
 
-    public DoctorsService(DSLContext dsl) {
+    public DoctorsService(DSLContext dsl, PasswordEncoder passwordEncoder) {
         this.dsl = dsl;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public Doctors createDoctor(Doctors doctors) {
-        Record record = dsl.insertInto(DOCTORS)
-                .set(DOCTORS.NAME, doctors.getName())
-                .set(DOCTORS.SURNAME, doctors.getSurname())
-                .set(DOCTORS.PERSONNEL_NUMBER, doctors.getPersonnel_number())
-                .returning(DOCTORS.ID)
+    public Doctors create(Doctors doctor) {
+        Integer id = dsl.insertInto(DOCTORS)
+                .set(DOCTOR_NAME, doctor.name())
+                .set(DOCTOR_SURNAME, doctor.surname())
+                .set(DOCTOR_PERSONNEL_NUMBER, doctor.personnelNumber())
+                .returning(DOCTOR_ID)
+                .fetchOne(DOCTOR_ID);
+        return new Doctors(id, doctor.name(), doctor.surname(), doctor.personnelNumber());
+    }
+
+    public Doctors getByPersonnelNumber(String personnelNumber) {
+        Record record = dsl.select(DOCTOR_ID, DOCTOR_NAME, DOCTOR_SURNAME, DOCTOR_PERSONNEL_NUMBER)
+                .from(DOCTORS)
+                .where(DOCTOR_PERSONNEL_NUMBER.eq(personnelNumber))
                 .fetchOne();
-
-        if (record != null) {
-            doctors.setId(record.get(DOCTORS.ID));
+        if (record == null) {
+            throw new NotFoundException("Doctor not found: " + personnelNumber);
         }
-
-        return doctors;
+        return new Doctors(
+                record.get(DOCTOR_ID),
+                record.get(DOCTOR_NAME),
+                record.get(DOCTOR_SURNAME),
+                record.get(DOCTOR_PERSONNEL_NUMBER)
+        );
     }
 
-    public Doctors getDoctorByPersonnelNumber(String personnelNumber) {
-        return dsl.selectFrom(DOCTORS)
-                .where(DOCTORS.PERSONNEL_NUMBER.eq(personnelNumber))
-                .fetchOneInto(Doctors.class);
-    }
-
-    public DoctorsRegistration createDoctorsPassword(DoctorsRegistration doctorsRegistration) {
-        String hashedPassword = passwordEncoder.encode(doctorsRegistration.getPassword());
-
-        Record record = dsl.insertInto(DOCTOR_LOGIN)
-                .set(DOCTOR_LOGIN.PERSONNEL_NUMBER, doctorsRegistration.getPersonnel_number())
-                .set(DOCTOR_LOGIN.PASSWORD, hashedPassword)
-                .returning(DOCTOR_LOGIN.ID)
-                .fetchOne();
-
-        if (record != null) {
-            doctorsRegistration.setId(record.get(DOCTOR_LOGIN.ID));
+    public RegistrationResponse register(DoctorsRegistration request) {
+        if (!dsl.fetchExists(DOCTORS, DOCTOR_PERSONNEL_NUMBER.eq(request.personnelNumber()))) {
+            throw new NotFoundException("Doctor not found: " + request.personnelNumber());
         }
-
-        return null;
+        Integer id = dsl.insertInto(DOCTOR_LOGIN)
+                .set(DOCTOR_LOGIN_PERSONNEL_NUMBER, request.personnelNumber())
+                .set(DOCTOR_LOGIN_PASSWORD, passwordEncoder.encode(request.password()))
+                .returning(DOCTOR_LOGIN_ID)
+                .fetchOne(DOCTOR_LOGIN_ID);
+        return new RegistrationResponse(id, request.personnelNumber());
     }
 
     public boolean isLoginValid(String personnelNumber, String password) {
-        Record record = dsl.selectFrom(DOCTOR_LOGIN)
-                .where(DOCTOR_LOGIN.PERSONNEL_NUMBER.eq(personnelNumber))
-                .fetchOne();
-
-        if (record == null) {
-            return false;
-        }
-
-        String hashedPassword = record.get(DOCTOR_LOGIN.PASSWORD);
-        return passwordEncoder.matches(password, hashedPassword);
-    }
-
-    public DoctorsRegistration createDoctorPassword(DoctorsRegistration doctorsRegistration) {
-        String hashedPassword = passwordEncoder.encode(doctorsRegistration.getPassword());
-
-        Record record = dsl.insertInto(DOCTOR_LOGIN)
-                .set(DOCTOR_LOGIN.PERSONNEL_NUMBER, doctorsRegistration.getPersonnel_number())
-                .set(DOCTOR_LOGIN.PASSWORD, hashedPassword)
-                .returning(DOCTOR_LOGIN.ID)
-                .fetchOne();
-
-        if (record != null) {
-            doctorsRegistration.setId(record.get(DOCTOR_LOGIN.ID));
-        }
-
-        return null;
+        String hash = dsl.select(DOCTOR_LOGIN_PASSWORD)
+                .from(DOCTOR_LOGIN)
+                .where(DOCTOR_LOGIN_PERSONNEL_NUMBER.eq(personnelNumber))
+                .fetchOne(DOCTOR_LOGIN_PASSWORD);
+        return hash != null && passwordEncoder.matches(password, hash);
     }
 }

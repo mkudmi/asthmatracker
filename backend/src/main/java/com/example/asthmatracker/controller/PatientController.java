@@ -3,71 +3,75 @@ package com.example.asthmatracker.controller;
 import com.example.asthmatracker.models.Patient;
 import com.example.asthmatracker.models.PatientLoginRequest;
 import com.example.asthmatracker.models.PatientRegistration;
+import com.example.asthmatracker.models.RegistrationResponse;
 import com.example.asthmatracker.service.PatientService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/api/patients")
 public class PatientController {
 
-    private final PatientService patientService;
+    private final PatientService service;
 
-    public PatientController(PatientService patientService) {
-        this.patientService = patientService;
+    public PatientController(PatientService service) {
+        this.service = service;
     }
 
-    /**
-     * Создать пациента
-     * */
     @PostMapping
-    public Patient createPatient(@Valid @RequestBody Patient patient) {
-        return patientService.createPatient(patient);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Patient create(@Valid @RequestBody Patient patient) {
+        return service.create(patient);
     }
 
-    /**
-     * Получить список пациентов по фильтру
-     * */
     @GetMapping
-    public List<Patient> getPatientsByFilter(
-            @RequestParam(required = false) String full_name,
-            @RequestParam(required = false) String oms) {
-        return patientService.getPatientsByFilter(full_name, oms);
+    public List<Patient> find(
+            @RequestParam(name = "full_name", required = false) String fullName,
+            @RequestParam(required = false) @Pattern(regexp = "\\d{16}") String oms
+    ) {
+        return service.find(fullName, oms);
     }
 
-    /**
-     * Изменить данные пациента
-     * */
     @PutMapping("/{id}")
-    public Patient updatePatient(
-            @Valid @RequestBody Patient patient,
-            @PathVariable Integer id) {
-        return patientService.updatePatient(patient, id);
+    public Patient update(
+            @PathVariable @Positive Integer id,
+            @Valid @RequestBody Patient patient
+    ) {
+        return service.update(id, patient);
     }
 
-    /**
-     * Удалить пациента
-     * */
     @DeleteMapping
-    public void deletePatientByOms(@RequestParam String oms) {
-        patientService.deletePatientByOms(oms);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @RequestParam @Pattern(regexp = "\\d{16}") String oms
+    ) {
+        service.deleteByOms(oms);
     }
 
-    /**
-     * Присвоить пользователю пароль
-     * */
     @PostMapping("/register")
-    public PatientRegistration createPatientPassword(@RequestBody PatientRegistration patientRegistration) {
-        return patientService.createPatientPassword(patientRegistration);
+    @ResponseStatus(HttpStatus.CREATED)
+    public RegistrationResponse register(@Valid @RequestBody PatientRegistration request) {
+        return service.register(request);
     }
 
-    /**
-     * Проверить, что пароль пользователя корректный
-     * */
     @PostMapping("/validate")
-    public boolean validateLogin(@RequestBody PatientLoginRequest request) {
-        return patientService.isLoginValid(request.getOms(), request.getPassword());
+    public boolean validateLogin(@Valid @RequestBody PatientLoginRequest request) {
+        return service.isLoginValid(request.oms(), request.password());
     }
 }

@@ -2,38 +2,47 @@ package com.example.asthmatracker.controller;
 
 import com.example.asthmatracker.models.Spirometry;
 import com.example.asthmatracker.service.SpirometryService;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/api/spirometry")
 public class SpirometryController {
 
-    private final SpirometryService spirometryService;
+    private final SpirometryService service;
 
-    public SpirometryController(SpirometryService spirometryService) {
-        this.spirometryService = spirometryService;
+    public SpirometryController(SpirometryService service) {
+        this.service = service;
     }
 
-    /**
-     * Записать результат спирометрии
-     * */
     @PostMapping
-    public Spirometry postSpirometry(@RequestBody Spirometry spirometry) {
-        return spirometryService.postResultOfSpirometry(spirometry);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Spirometry create(@Valid @RequestBody Spirometry spirometry) {
+        return service.create(spirometry);
     }
 
-    /**
-     * Получить список результатов спирометрии
-     * */
     @GetMapping
-    public List<Spirometry> getSpirometryByFilter(
-            @RequestParam() Integer patient_id,
-            @RequestParam(required = false) LocalDate start_date,
-            @RequestParam(required = false) LocalDate end_date
+    public List<Spirometry> find(
+            @RequestParam(name = "patient_id") @Positive Integer patientId,
+            @RequestParam(name = "start_date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "end_date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        return spirometryService.getSpirometryByFilter(patient_id, start_date, end_date);
+        return service.find(patientId, startDate, endDate);
     }
 }

@@ -8,7 +8,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.jooq.generated.Tables.ATTACKS_OF_ILLNESS;
+import static com.example.asthmatracker.persistence.DatabaseTables.ATTACKS;
+import static com.example.asthmatracker.persistence.DatabaseTables.ATTACK_DATE_TIME;
+import static com.example.asthmatracker.persistence.DatabaseTables.ATTACK_ID;
+import static com.example.asthmatracker.persistence.DatabaseTables.ATTACK_PATIENT_ID;
+import static com.example.asthmatracker.persistence.DatabaseTables.ATTACK_SCALE;
 
 @Service
 public class AttacksOfIllnessService {
@@ -19,28 +23,32 @@ public class AttacksOfIllnessService {
         this.dsl = dsl;
     }
 
-    public AttacksOfIllness postAttack(AttacksOfIllness attacksOfIllness) {
-        Record record = dsl.insertInto(ATTACKS_OF_ILLNESS)
-                .set(ATTACKS_OF_ILLNESS.PATIENT_ID, attacksOfIllness.getPatient_id())
-                .set(ATTACKS_OF_ILLNESS.DATE_TIME, attacksOfIllness.getDate_time())
-                .set(ATTACKS_OF_ILLNESS.SCALE, attacksOfIllness.getScale())
-                .returning(ATTACKS_OF_ILLNESS.ID)
-                .fetchOne();
+    public AttacksOfIllness create(AttacksOfIllness attack) {
+        Integer id = dsl.insertInto(ATTACKS)
+                .set(ATTACK_PATIENT_ID, attack.patientId())
+                .set(ATTACK_DATE_TIME, attack.dateTime())
+                .set(ATTACK_SCALE, attack.scale())
+                .returning(ATTACK_ID)
+                .fetchOne(ATTACK_ID);
 
-        if (record != null) {
-            attacksOfIllness.setId(record.get(ATTACKS_OF_ILLNESS.ID));
-        }
-
-        return attacksOfIllness;
+        return new AttacksOfIllness(id, attack.patientId(), attack.dateTime(), attack.scale());
     }
 
-    public List<AttacksOfIllness> getAttacksByFilter(Integer patientId, LocalDate startDate, LocalDate endDate) {
-        return dsl.selectFrom(ATTACKS_OF_ILLNESS)
-                .where(ATTACKS_OF_ILLNESS.PATIENT_ID.eq(patientId))
-                .and(ATTACKS_OF_ILLNESS.DATE_TIME.between(
-                        startDate.atStartOfDay(),
-                        endDate.plusDays(1).atStartOfDay().minusSeconds(1)
-                ))
-                .fetchInto(AttacksOfIllness.class);
+    public List<AttacksOfIllness> find(Integer patientId, LocalDate startDate, LocalDate endDate) {
+        return dsl.select(ATTACK_ID, ATTACK_PATIENT_ID, ATTACK_DATE_TIME, ATTACK_SCALE)
+                .from(ATTACKS)
+                .where(ATTACK_PATIENT_ID.eq(patientId))
+                .and(DateRange.condition(ATTACK_DATE_TIME, startDate, endDate))
+                .orderBy(ATTACK_DATE_TIME.asc())
+                .fetch(this::map);
+    }
+
+    private AttacksOfIllness map(Record record) {
+        return new AttacksOfIllness(
+                record.get(ATTACK_ID),
+                record.get(ATTACK_PATIENT_ID),
+                record.get(ATTACK_DATE_TIME),
+                record.get(ATTACK_SCALE)
+        );
     }
 }

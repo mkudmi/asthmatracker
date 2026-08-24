@@ -1,12 +1,11 @@
 package com.example.asthmatracker.models;
 
-import lombok.Builder;
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-@Data
-@Builder
-public class PatientRegistration {
-    private Integer id;
-    private String oms;
-    private String password;
+public record PatientRegistration(
+        @NotBlank @Pattern(regexp = "\\d{16}") String oms,
+        @NotBlank @Size(min = 8, max = 72) String password
+) {
 }
