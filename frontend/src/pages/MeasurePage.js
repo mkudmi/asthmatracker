@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import '../css/MeasurePage.css';
+import API_URL from '../config/api';
 
 function MeasurePage({ userId }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
-
   const [showModal, setShowModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [peakFlow, setPeakFlow] = useState('');
@@ -31,7 +30,7 @@ function MeasurePage({ userId }) {
         setMedicines([]);
       }
     })();
-  }, [userId, API_URL]);
+  }, [userId]);
 
   const getIsoMoscow = () => {
     const now = new Date();

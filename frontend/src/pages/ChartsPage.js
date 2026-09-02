@@ -3,13 +3,12 @@ import Header from '../components/Header';
 import CustomPefChart from '../components/CustomPefChart';
 import CustomAttacksChart from '../components/CustomAttacksChart';
 import CustomMedicineHeatmap from '../components/CustomMedicineHeatmap';
+import API_URL from '../config/api';
 import { buildPefZonesForPatient } from '../utils/pefZones';
 import { ymdLocal, fmtShortDate, fmtFullDateTime, fmtTime } from '../utils/dateUtils';
 import '../css/ChartsPage.css';
 
 function ChartsPage({ userOms }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
-
   const [patient, setPatient] = useState(null);
   const [loadingPatient, setLoadingPatient] = useState(false);
   const [errorPatient, setErrorPatient] = useState('');
@@ -69,7 +68,7 @@ function ChartsPage({ userOms }) {
       }
     };
     fetchPatient();
-  }, [userOms, API_URL]);
+  }, [userOms]);
 
   useEffect(() => {
     if (!patient?.id) return;
@@ -144,7 +143,7 @@ function ChartsPage({ userOms }) {
       }
     };
     load();
-  }, [patient, API_URL]);
+  }, [patient]);
 
   const zones = useMemo(() => buildPefZonesForPatient(patient), [patient]);
 

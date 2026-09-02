@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
+import API_URL from '../config/api';
 
 function DoctorProfilePage({ personnelNumber, onLogout }) {
     const [doctor, setDoctor] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
-
     useEffect(() => {
         if (!personnelNumber) return;
         const fetchDoctor = async () => {
@@ -24,7 +23,7 @@ function DoctorProfilePage({ personnelNumber, onLogout }) {
             }
         };
         fetchDoctor();
-    }, [personnelNumber, API_URL]);
+    }, [personnelNumber]);
 
     const getInitials = () => {
         if (!doctor) return '';

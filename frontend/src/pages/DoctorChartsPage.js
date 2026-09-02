@@ -3,14 +3,13 @@ import Header from '../components/Header';
 import CustomAttacksChart from '../components/CustomAttacksChart';
 import CustomPefChart from '../components/CustomPefChart';
 import CustomMedicineHeatmap from '../components/CustomMedicineHeatmap';
+import API_URL from '../config/api';
 import { buildPefZonesForPatient } from '../utils/pefZones';
 import { ymdLocal, fmtShortDate, fmtFullDateTime, fmtTime } from '../utils/dateUtils';
 
 const LS_KEY = 'doctor_charts_state_v2';
 
 function DoctorChartsPage() {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
-
   const [searchOms, setSearchOms] = useState('');
   const [patient, setPatient] = useState(null);
   const [attacksData, setAttacksData] = useState([]);
@@ -212,7 +211,7 @@ function DoctorChartsPage() {
     };
 
     fetchMedicines();
-  }, [patient, API_URL]);
+  }, [patient]);
 
   const handleClear = () => {
     setPatient(null);

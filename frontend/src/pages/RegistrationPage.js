@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
+import API_URL from '../config/api';
 
 function RegistrationPage() {
   const [oms, setOms] = useState('');

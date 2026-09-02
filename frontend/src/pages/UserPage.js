@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import { differenceInYears, parseISO, isValid } from 'date-fns';
+import API_URL from '../config/api';
 
 function UserPage({ userOms, onLogout }) {
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [medicines, setMedicines] = useState([]);
-
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
 
   useEffect(() => {
     const prevHtmlOverflowX = document.documentElement.style.overflowX;
@@ -57,7 +56,7 @@ function UserPage({ userOms, onLogout }) {
     };
 
     fetchPatient();
-  }, [userOms, API_URL]);
+  }, [userOms]);
 
   useEffect(() => {
     if (!patient?.id) return;
@@ -76,7 +75,7 @@ function UserPage({ userOms, onLogout }) {
     };
 
     fetchMedicines();
-  }, [patient, API_URL]);
+  }, [patient]);
 
   const getInitials = () => {
     if (!patient) return '';

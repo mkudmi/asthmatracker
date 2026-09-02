@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import API_URL from '../config/api';
 
 function DoctorAuthPage({ onSuccessDoctorLogin }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
   const [personnelNumber, setPersonnelNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

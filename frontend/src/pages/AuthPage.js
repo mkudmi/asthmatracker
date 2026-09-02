@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import API_URL from '../config/api';
 
 function AuthPage({ onSuccessLogin }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://астматрекер.рф/api';
-
   const [oms, setOms] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -77,7 +76,7 @@ function AuthPage({ onSuccessLogin }) {
           setErrorMessage('Не найден пациент с таким ОМС');
         }
       } else {
-        setErrorMessage('ОМС или пароль неверные');
+          setErrorMessage('ОМС или пароль неверные');
       }
     } catch {
       setErrorMessage('Ошибка подключения к серверу');
